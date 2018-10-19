@@ -22,6 +22,9 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true })
 app.use(passport.initialize());
 require('./config/passport')(passport);
 
+// Test Get for Deployment
+app.get('/', (req, res) => res.json({msg: 'Deployment successful'}));
+
 // Use Routes
 app.use('/api/v2/users', usersRouter);
 app.use('/api/v2/profiles', profilesRouter);

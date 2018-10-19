@@ -13,13 +13,6 @@ const {validateLoginInput} = require('../../validation/login');
 const Parent = require('../../models/Parent');
 const Child = require('../../models/Child');
 
-// @route    GET api/v2/users/test
-// @desc     Tests parent user route
-// @access   Public
-router.get('/test', (req, res) => res.json({
-  msg: 'parent router works'
-}));
-
 // @route    POST api/v2/users/register_parent
 // @desc     Registers parent user
 // @access   Public
@@ -29,13 +22,12 @@ router.post('/register_parent', (req, res) => {
   if(!isValid){
     return res.status(400).json(errors);
   }
-
   const {name, username, password, email} = req.body;
   Parent.findOne({username})
     .then(parent => {
       if(parent){
         errors.username = 'Username already exists.';
-        return res.status(400).json({errors});
+        return res.status(400).json(errors);
       } else {
         const newParent = {name, username, password, email};
         bcrypt.genSalt(10, (err, salt) => {
@@ -54,20 +46,18 @@ router.post('/register_parent', (req, res) => {
 // @route    POST api/v2/users/login_parent
 // @desc     Login parent user / Returning JWT
 // @access   Public
-router.post('/parent_login', (req, res) => {
+router.post('/login_parent', (req, res) => {
   const {errors, isValid} = validateLoginInput(req.body);
   // Check validation
   if(!isValid){
     return res.status(400).json(errors);
   }
   const { username, password } = req.body;
-
-  // Find parent by username
   Parent.findOne({username})
     .then(parent => {
       if(!parent){
         errors.username = 'Username not found';
-        return res.status(400).json({errors});
+        return res.status(400).json(errors);
       }
       // Check password
       bcrypt.compare(password, parent.password)
@@ -85,7 +75,7 @@ router.post('/parent_login', (req, res) => {
             });
           } else {
             errors.password = 'Password incorrect';
-            return res.status(400).json({errors});
+            return res.status(400).json(errors);
           }
         });
     });
@@ -106,7 +96,7 @@ router.post('/register_child', passport.authenticate('jwt', {session: false}), (
     .then(child => {
       if(child){
         errors.username = 'Username already exists.';
-        return res.status(400).json({errors});
+        return res.status(400).json(errors);
       } else {
         const newChild = {name, username, password, parentId};
         bcrypt.genSalt(10, (err, salt) => {
@@ -131,14 +121,50 @@ router.post('/register_child', passport.authenticate('jwt', {session: false}), (
     });
 });
 
+// @route    POST api/v2/users/login_parent
+// @desc     Login child user / Returning JWT
+// @access   Public
+router.post('/login_child', (req, res) => {
+  const {errors, isValid} = validateLoginInput(req.body);
+  // Check validation
+  if(!isValid){
+    return res.status(400).json(errors);
+  }
+  const { username, password } = req.body;
+  Child.findOne({username})
+    .then(child => {
+      if(!child){
+        errors.username = 'Username not found';
+        return res.status(400).json(errors);
+      }
+      // Check password
+      bcrypt.compare(password, child.password)
+        .then(isMatch => {
+          if(isMatch){
+            // Child matched, create jwt payload
+            const {name, username, id, isParent} = child;
+            const payload = {name, username, id, isParent};
+            // Sign token
+            jwt.sign(payload, JWT_SECRET, {expiresIn: JWT_EXPIRY}, (err, token) => {
+              res.json({
+                success: true,
+                token: `Bearer ${token}`
+              });
+            });
+          } else {
+            errors.password = 'Password incorrect';
+            return res.status(400).json(errors);
+          }
+        });
+    });
+});
+
 // @route    GET api/v2/users/current_user
 // @desc     Returns the current user
 // @access   Private
 router.get('/current_user', passport.authenticate('jwt', {session: false}), (req, res) => {
-  const {id, name, email, date, username, childId} = req.user;
-  res.json({id, name, email, username, date, childId});
+  const {id, name, email, date, username, childId, parentId} = req.user;
+  res.json({id, name, email, username, date, childId, parentId});
 });
-
-
 
 module.exports = router;

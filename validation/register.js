@@ -18,10 +18,10 @@ module.exports = {
     // Username validation
     data.username = !isEmpty(data.username) ? data.username : '';
     if(!Validator.isLength(data.username, { min: 2, max: 30 })){
-      errors.name = 'Username must be between 2 and 30 characters';
+      errors.username = 'Username must be between 2 and 30 characters';
     }
     if(Validator.isEmpty(data.username)){
-      errors.name = 'Username field is required';
+      errors.username = 'Username field is required';
     }
 
     // Email validation (for parents only)
@@ -29,9 +29,10 @@ module.exports = {
       data.email = !isEmpty(data.email) ? data.email : '';
       if(Validator.isEmpty(data.email)){
         errors.email = 'Email field is required';
-      }
-      if(!Validator.isEmail(data.email)){
-        errors.email = 'Email is invalid.';
+      } else {
+        if(!Validator.isEmail(data.email)){
+          errors.email = 'Email is invalid.';
+        }
       }
     }
     

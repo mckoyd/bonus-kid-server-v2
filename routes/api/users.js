@@ -13,6 +13,32 @@ const {validateLoginInput} = require('../../validation/login');
 const Parent = require('../../models/Parent');
 const Child = require('../../models/Child');
 
+// @route    GET api/v2/users/current_user
+// @desc     Returns the current user
+// @access   Private
+router.get('/current_user', passport.authenticate('jwt', {session: false}), (req, res) => {
+  const errors = {};
+  const {id} = req.user;
+  if(req.user.isParent){
+    Parent.findById(id)
+      .populate('childId', ['name', 'username'])
+      .then(parent => res.json(parent))
+      .catch(err => {
+        errors.mongooseErr = err;
+        res.json(errors);
+      });
+  } else {
+    Child.findById(id)
+      .populate('parentId', ['name', 'username'])
+      .then(child => res.json(child))
+      .catch(err => {
+        errors.mongooseErr = err;
+        errors.noCurrentUser = 'There is no current user logged in';
+        res.json(errors);
+      });
+  }
+});
+
 // @route    POST api/v2/users/register_parent
 // @desc     Registers parent user
 // @access   Public
@@ -106,11 +132,13 @@ router.post('/register_child', passport.authenticate('jwt', {session: false}), (
             Child.create(newChild)
               .then(child => {
                 Parent.findById(parentId)
+                  .populate('childId', ['name'])
                   .then(parent => {
                     const updateParent = {
                       childId: [...parent.childId, child.id]
                     };
                     Parent.findByIdAndUpdate(parentId, updateParent, { new: true })
+                      .populate('childId', ['name'])
                       .then(parent => res.json({parent, child}));
                   });
               })
@@ -159,12 +187,20 @@ router.post('/login_child', (req, res) => {
     });
 });
 
-// @route    GET api/v2/users/current_user
-// @desc     Returns the current user
+// @route    DELETE api/v2/users
+// @desc     Deletes the current user
 // @access   Private
-router.get('/current_user', passport.authenticate('jwt', {session: false}), (req, res) => {
-  const {id, name, email, date, username, childId, parentId} = req.user;
-  res.json({id, name, email, username, date, childId, parentId});
+router.delete('/', passport.authenticate('jwt', {session: false}), (req, res) => {
+  const user = req.user.id;
+  if(req.user.isParent){
+    Parent.findOneAndDelete({_id: user})
+      .then(() => res.json({success: true, msg: 'User deleted'}))
+      .catch(err => res.json(err));
+  } else {
+    Child.findOneAndDelete({_id: user})
+      .then(() => res.json({success: true, msg: 'User deleted'}))
+      .catch(err => res.json(err));
+  }
 });
 
 module.exports = router;

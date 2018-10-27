@@ -6,7 +6,8 @@ const passport = require('passport');
 const PORT = process.env.PORT || 5000;
 
 const usersRouter = require('./routes/api/users');
-const profilesRouter = require('./routes/api/profiles');
+const tasksRouter = require('./routes/api/tasks');
+const rewardsRouter = require('./routes/api/rewards');
 
 // Body parser
 app.use(express.urlencoded({extended: false}));
@@ -27,7 +28,8 @@ app.get('/', (req, res) => res.json({msg: 'Deployment successful'}));
 
 // Use Routes
 app.use('/api/v2/users', usersRouter);
-app.use('/api/v2/profiles', profilesRouter);
+app.use('/api/v2/tasks', tasksRouter);
+app.use('/api/v2/rewards', rewardsRouter);
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

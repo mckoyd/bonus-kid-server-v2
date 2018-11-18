@@ -61,7 +61,7 @@ router.post('/register_parent', (req, res) => {
             if(err) throw err;
             newParent.password = hash;
             Parent.create(newParent)
-              .then(parent => res.json(parent))
+              .then(parent => res.json({parent}))
               .catch(err => console.log(err));
           });
         });
@@ -90,13 +90,13 @@ router.post('/login_parent', (req, res) => {
         .then(isMatch => {
           if(isMatch){
             // Parent matched, create jwt payload
-            const {name, username, email, id, isParent} = parent;
-            const payload = {name, username, email, id, isParent};
+            const {name, username, email, id, isParent, childId} = parent;
+            const payload = {name, username, email, id, isParent, childId};
             // Sign token
             jwt.sign(payload, JWT_SECRET, {expiresIn: JWT_EXPIRY}, (err, token) => {
               res.json({
                 success: true,
-                token: `Bearer ${token}`
+                token
               });
             });
           } else {
@@ -149,7 +149,7 @@ router.post('/register_child', passport.authenticate('jwt', {session: false}), (
     });
 });
 
-// @route    POST api/v2/users/login_parent
+// @route    POST api/v2/users/login_child
 // @desc     Login child user / Returning JWT
 // @access   Public
 router.post('/login_child', (req, res) => {
@@ -176,7 +176,7 @@ router.post('/login_child', (req, res) => {
             jwt.sign(payload, JWT_SECRET, {expiresIn: JWT_EXPIRY}, (err, token) => {
               res.json({
                 success: true,
-                token: `Bearer ${token}`
+                token
               });
             });
           } else {

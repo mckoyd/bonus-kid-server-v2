@@ -26,6 +26,25 @@ router.get('/',passport.authenticate('jwt', {session: false}), (req, res) => {
   }
 });
 
+// @route    GET api/v2/tasks
+// @desc     Get all tasks for one child
+// @access   Private
+router.get('/:child_id',passport.authenticate('jwt', {session: false}), (req, res) => {
+  if(req.user.isParent){
+    Task.find({childId: req.params.child_id})
+      .sort({childId: 'asc'})
+      .populate('childId', 'name')
+      .populate('parentId', 'name')
+      .then(task => res.json(task))
+      .catch(err => res.json(err));
+  } else {
+    Task.find({childId: req.user.id})
+      .populate('parentId', 'name')
+      .then(task => res.json(task))
+      .catch(err => res.json(err));
+  }
+});
+
 // @route    POST api/v2/tasks/
 // @desc     Create or edit a task (parents only)
 // @access   Private

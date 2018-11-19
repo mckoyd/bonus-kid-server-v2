@@ -187,19 +187,43 @@ router.post('/login_child', (req, res) => {
     });
 });
 
+// @route    POST api/v2/users/refresh
+// @desc     Refreshes auth token
+// @access   Private
+router.post('/refresh', passport.authenticate('jwt', {session: false}), (req, res) => {
+  console.log(req.user);
+  Parent.findById(req.user.id)
+    .then(parent => {
+      if(!parent){
+        errors.id = 'User Id not found';
+        return res.status(400).json(errors);
+      }
+      const {name, username, email, id, isParent, childId} = parent;
+      const payload = {name, username, email, id, isParent, childId};
+            // Sign token
+      jwt.sign(payload, JWT_SECRET, {expiresIn: JWT_EXPIRY}, (err, token) => {
+        res.json({
+          success: true,
+          token
+        });
+      });
+    });
+});
+
 // @route    DELETE api/v2/users
 // @desc     Deletes the current user
 // @access   Private
 router.delete('/', passport.authenticate('jwt', {session: false}), (req, res) => {
-  const user = req.user.id;
-  if(req.user.isParent){
-    Parent.findOneAndDelete({_id: user})
-      .then(() => res.json({success: true, msg: 'User deleted'}))
-      .catch(err => res.json(err));
+  const user = req.user.id, errors = {}, success = {};
+  if(!req.user.isParent){
+    errors.unauthorized = 'Only parents can delete accounts';
+    return res.status(404).json(errors);
   } else {
-    Child.findOneAndDelete({_id: user})
-      .then(() => res.json({success: true, msg: 'User deleted'}))
-      .catch(err => res.json(err));
+    console.log(req.user.childId)
+    req.user.childId.map(id => Child.findOneAndDelete({_id: id}))
+    Parent.findOneAndDelete({_id: user})
+      .then(() => res.json({parentDeleted: true, success}))
+      .catch(err => res.json(err))
   }
 });
 

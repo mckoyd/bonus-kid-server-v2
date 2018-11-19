@@ -80,6 +80,7 @@ router.post('/login_parent', (req, res) => {
   }
   const { username, password } = req.body;
   Parent.findOne({username})
+    .populate('childId', ['name', 'username'])
     .then(parent => {
       if(!parent){
         errors.username = 'Username not found';

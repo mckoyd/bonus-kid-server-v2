@@ -192,8 +192,8 @@ router.post('/login_child', (req, res) => {
 // @desc     Refreshes auth token
 // @access   Private
 router.post('/refresh', passport.authenticate('jwt', {session: false}), (req, res) => {
-  console.log(req.user);
   Parent.findById(req.user.id)
+    .populate('childId', ['name', 'username'])
     .then(parent => {
       if(!parent){
         errors.id = 'User Id not found';

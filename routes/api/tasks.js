@@ -7,6 +7,7 @@ const {validateTaskInput} = require('../../validation/task');
 
 // Load Task Model
 const Task = require('../../models/Task');
+const Child = require('../../models/Child');
 
 // @route    GET api/v2/tasks
 // @desc     Get all tasks
@@ -77,7 +78,18 @@ router.post('/', passport.authenticate('jwt', {session: false}), (req, res) => {
           .catch(err => res.status(400).json(err));
       } else {
         Task.create(newTask)
-          .then(task => res.json(task))
+          .then(task => {
+            Child.findById(childId)
+              .then(child => {
+                const updatedTasks = {tasks: [...child.tasks, task.id]}
+                Child.findByIdAndUpdate(
+                  childId,
+                  updatedTasks,
+                  {new: true}
+                )
+                  .then(child => res.json({child, task}))
+              })
+          })
           .catch(err => res.status(400).json(err));
       }
     });

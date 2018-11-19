@@ -16,6 +16,20 @@ const childSchema = mongoose.Schema({
     ref: 'Parent', 
     required: true
   },
+  totalPoints: {type: Number, required: true, default: 0},
+  currentPoints: {type: Number, required: true, default: 0},
+  tasks: [
+    {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Task'
+    } 
+  ],
+  rewards: [
+    {
+      type: mongoose.Schema.ObjectId,
+      ref: 'Reward'
+    }
+  ],
   date: {type: Date, default: Date.now}
 });
 

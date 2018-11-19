@@ -21,7 +21,10 @@ router.get('/current_user', passport.authenticate('jwt', {session: false}), (req
   const {id} = req.user;
   if(req.user.isParent){
     Parent.findById(id)
-      .populate('childId', ['name', 'username'])
+      .populate({
+        path: 'childId',
+        populate: { path: 'tasks' }
+      })
       .then(parent => res.json(parent))
       .catch(err => {
         errors.mongooseErr = err;
@@ -80,7 +83,10 @@ router.post('/login_parent', (req, res) => {
   }
   const { username, password } = req.body;
   Parent.findOne({username})
-    .populate('childId', ['name', 'username'])
+    .populate({
+      path: 'childId',
+      populate: { path: 'tasks' }
+    })
     .then(parent => {
       if(!parent){
         errors.username = 'Username not found';
@@ -133,13 +139,15 @@ router.post('/register_child', passport.authenticate('jwt', {session: false}), (
             Child.create(newChild)
               .then(child => {
                 Parent.findById(parentId)
-                  .populate('childId', ['name'])
                   .then(parent => {
                     const updateParent = {
                       childId: [...parent.childId, child.id]
                     };
                     Parent.findByIdAndUpdate(parentId, updateParent, { new: true })
-                      .populate('childId', ['name'])
+                      .populate({
+                        path: 'childId',
+                        populate: { path: 'tasks' }
+                      })
                       .then(parent => res.json({parent, child}));
                   });
               })
@@ -161,6 +169,7 @@ router.post('/login_child', (req, res) => {
   }
   const { username, password } = req.body;
   Child.findOne({username})
+    .populate('tasks')
     .then(child => {
       if(!child){
         errors.username = 'Username not found';
@@ -171,8 +180,8 @@ router.post('/login_child', (req, res) => {
         .then(isMatch => {
           if(isMatch){
             // Child matched, create jwt payload
-            const {name, username, id, isParent} = child;
-            const payload = {name, username, id, isParent};
+            const {name, username, id, isParent, tasks} = child;
+            const payload = {name, username, id, isParent, tasks};
             // Sign token
             jwt.sign(payload, JWT_SECRET, {expiresIn: JWT_EXPIRY}, (err, token) => {
               res.json({
@@ -193,7 +202,10 @@ router.post('/login_child', (req, res) => {
 // @access   Private
 router.post('/refresh', passport.authenticate('jwt', {session: false}), (req, res) => {
   Parent.findById(req.user.id)
-    .populate('childId', ['name', 'username'])
+    .populate({
+      path: 'childId',
+      populate: { path: 'tasks' }
+    })
     .then(parent => {
       if(!parent){
         errors.id = 'User Id not found';

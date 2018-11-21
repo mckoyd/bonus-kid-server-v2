@@ -66,33 +66,43 @@ router.post('/', passport.authenticate('jwt', {session: false}), (req, res) => {
     childId,
     parentId: req.user.id
   };
-  Task.findOne({name, childId})
+  Task.create(newTask)
     .then(task => {
-      if(task){
-        Task.findOneAndUpdate(
-          {_id: task.id},
-          {$set: newTask},
-          {new: true}
-        )
-          .then(task => res.json(task))
-          .catch(err => res.status(400).json(err));
-      } else {
-        Task.create(newTask)
-          .then(task => {
-            Child.findById(childId)
-              .then(child => {
-                const updatedTasks = {tasks: [...child.tasks, task.id]}
-                Child.findByIdAndUpdate(
-                  childId,
-                  updatedTasks,
-                  {new: true}
-                )
-                  .then(child => res.json({child, task}))
-              })
-          })
-          .catch(err => res.status(400).json(err));
-      }
-    });
+      Child.findById(childId)
+        .then(child => {
+          console.log(child)
+          const updatedTasks = {tasks: [...child.tasks, task.id]}
+          Child.findByIdAndUpdate(
+            childId,
+            updatedTasks,
+            {new: true}
+          )
+            .then(child => res.json({child, task}))
+        })
+        .catch(err => console.log(err))
+    })
+    .catch(err => res.status(400).json(err));
+});
+
+// @route    POST api/v2/tasks/:task_id
+// @desc     Edits a task by id (parents only)
+// @access   Private
+router.post('/:task_id', passport.authenticate('jwt', {session: false}), (req, res) => {
+  const errors = {}, updatedTask = {};
+  const id = req.params.task_id;
+  const { name, pointValue, childId } = req.body;
+  name!==undefined ? updatedTask.name = name : 
+    pointValue!==undefined ? updatedTask.pointValue = pointValue : 
+      errors.noValues = 'Nothing to edit';
+  if(!req.user.isParent){
+    errors.notParent = 'User must be parent in order to edit a task';
+    res.status(400).json(errors);
+  } else if(errors.noValues) {
+    res.status(400).json(errors);
+  }
+  Task.findByIdAndUpdate(id, updatedTask, {new: true})
+    .then(task => res.json(task))
+    .catch(err => res.json(err))
 });
 
 // @route    DELETE api/v2/tasks/:task_id

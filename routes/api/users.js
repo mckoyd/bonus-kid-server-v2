@@ -65,7 +65,7 @@ router.post('/register_parent', (req, res) => {
             newParent.password = hash;
             Parent.create(newParent)
               .then(parent => res.json({parent}))
-              .catch(err => console.log(err));
+              .catch(err => res.status(400).json(err));
           });
         });
       }
@@ -151,7 +151,7 @@ router.post('/register_child', passport.authenticate('jwt', {session: false}), (
                       .then(parent => res.json({parent, child}));
                   });
               })
-              .catch(err => console.log(err));
+              .catch(err => res.status(400).json(err));
           });
         });
       }
@@ -232,7 +232,6 @@ router.delete('/', passport.authenticate('jwt', {session: false}), (req, res) =>
     errors.unauthorized = 'Only parents can delete accounts';
     return res.status(404).json(errors);
   } else {
-    console.log(req.user.childId)
     req.user.childId.map(id => Child.findOneAndDelete({_id: id}))
     Parent.findOneAndDelete({_id: user})
       .then(() => res.json({parentDeleted: true, success}))

@@ -12,8 +12,9 @@ const tasksRouter = require('./routes/api/tasks');
 const rewardsRouter = require('./routes/api/rewards');
 
 app.use(cors({
-  origin: CLIENT_ORIGIN
-}))
+  origin: CLIENT_ORIGIN,
+  credentials: true
+}));
 
 // Body parser
 app.use(express.urlencoded({extended: false}));

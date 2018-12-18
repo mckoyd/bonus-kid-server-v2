@@ -11,6 +11,7 @@ const childSchema = mongoose.Schema({
   },
   password: {type: String, required: true},
   isParent: { type: Boolean, required: true, default: false},
+  avatar: {type: String, required: true, default: ''},
   parentId: { 
     type: mongoose.Schema.ObjectId, 
     ref: 'Parent', 

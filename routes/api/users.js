@@ -123,7 +123,7 @@ router.post('/register_child', passport.authenticate('jwt', {session: false}), (
   if(!isValid){
     return res.status(400).json(errors);
   }
-  const {name, username, password} = req.body;
+  const {name, username, password, avatar} = req.body;
   const parentId = req.user.id;
   Child.findOne({username})
     .then(child => {
@@ -131,7 +131,7 @@ router.post('/register_child', passport.authenticate('jwt', {session: false}), (
         errors.username = 'Username already exists.';
         return res.status(400).json(errors);
       } else {
-        const newChild = {name, username, password, parentId};
+        const newChild = {name, username, password, parentId, avatar};
         bcrypt.genSalt(10, (err, salt) => {
           bcrypt.hash(password, salt, (err, hash) => {
             if(err) throw err;
